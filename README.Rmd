@@ -1,0 +1,107 @@
+
+---
+output: github_document
+---
+
+# Kids Body Measures
+Visualization of the body measurements of our children
+
+<div>
+by <a href="mailto:firstname.lastname [@] outlook.com">Konstantin "Karl Komet" Lang</a> on `r Sys.time()`
+</div>
+
+```{r packages, include = FALSE}
+library(package = tidyverse)
+```
+
+```{r provide_data, include = FALSE}
+measures <- 
+  bind_rows(
+    tribble(
+      ~date, ~h, ~w,
+      "2019/04/29", 106, NA,
+      "2019/08/24", 109, NA,
+      "2019/11/30", 111, NA,
+      "2020/03/07", 114.5, NA,
+      "2020/04/27", 115, NA,
+      "2020/07/12", 116, NA,
+      "2020/10/20", 119.5, NA,
+      "2020/12/06", 120.5, NA,
+      "2015/11/09", 53, 3.4,
+      "2015/12/07", 54.5, 3.6,
+      "2016/02/16", 64.5, 6.3,
+      "2016/04/26", 71.5, 8.1,
+      "2016/10/20", 81, 11.1,
+      "2017/11/21", 91.5, 13.6,
+      "2018/11/06", 102.5, 16.8,
+      "2019/11/04", 111.5, 18.7,
+      "2021/01/18", 121, 22
+    ),
+    tribble(
+      ~date, ~h, ~w,
+      "2019/05/01", 89, NA,
+      "2019/08/24", 92, NA,
+      "2019/11/30", 96, NA,
+      "2020/03/07", 98, NA,
+      "2020/04/27", 100, NA,
+      "2020/07/12", 101.5, NA,
+      "2020/10/18", 103, NA,
+      "2020/12/06", 104, NA,
+      "2017/05/26", 53, 3.5,
+      "2017/07/25", 62, 5.6,
+      "2017/08/22", 65, 7.2,
+      "2017/11/21", 75.5, 9.1,
+      "2018/04/24", 78, 10.1,
+      "2019/06/25", 90.5, 13.7,
+      "2020/06/08", 101.5, 16.4
+    ),
+    .id = "idx"
+  ) %>% 
+  mutate(
+    date  = as.Date(x = date),
+    child = factor(x = idx, levels = 1:2, labels = c("Sarah", "Felix")),
+    b     = w / (h / 100) ^ 2
+  ) %>% 
+  arrange(child, date) %>% 
+  group_by(child) %>% 
+  mutate(
+    day  = as.numeric(x = date - .data$date[1]),
+    age  = day / 365.25
+  ) %>% 
+  ungroup() %>% 
+  select(child, date, day, age, h, w, b) %>% 
+  pivot_longer(cols = c(h, w, b)) %>% 
+  mutate(name = factor(
+    x      = name,
+    levels = c("h", "w", "b"),
+    labels = c("height [cm]", "weight [kg]", "bmi [kg/cm^2]")
+  )) %>% 
+  drop_na()
+```
+
+```{r ggplot, fig.asp = 0.5, fig.width = 10, out.width = "100%"}
+measures %>% 
+  ggplot(mapping = aes(x = age, y = value, color = child, fill = child)) +  
+  facet_grid(name ~ ., scales = "free", space = "free_x", switch = "y") + 
+  geom_point(shape = 18, size = 3) + 
+  geom_smooth(method = loess, formula = y ~ sqrt(x), se = FALSE, alpha = 0.7) + 
+  # scale_y_log10() + 
+  # scale_x_continuous(trans = "pseudo_log", breaks = 0:100, minor_breaks = 0:99 + 0.5) + 
+  labs(
+    y = NULL, color = NULL, fill = NULL, 
+    x = "age [years]",
+    title = "KIDS BODY MEASURES",
+    subtitle = "raw data with LOESS fit",
+    caption = paste("created on", Sys.time(), "by KL")
+  ) + 
+  theme_light() + 
+  theme(
+    strip.placement  = "outside",
+    strip.background = element_rect(fill = "white"),
+    strip.text       = element_text(colour = "black"),
+    legend.position  = "right",
+    plot.subtitle    = element_text(size = 10, color = "gray"),
+    plot.caption     = element_text(hjust = 0, color = "gray")
+  )
+```
+
